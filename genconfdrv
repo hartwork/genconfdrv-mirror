@@ -271,7 +271,7 @@ def main():
             cfgdrv.enable_upgrades()
 
         if not args.no_debian_cleanup:
-            cfgdrv.add_command("rm -f /etc/network/interfaces.d/eth*.cfg", True)
+            cfgdrv.add_command("rm -f /etc/network/interfaces.d/eth*", True)
             cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/cloud/templates/sources.list.*.tmpl; rm /etc/apt/sources.list.d/*", True)
             cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/resolv.conf /etc/cloud/templates/resolv.conf.tmpl", True)
 
