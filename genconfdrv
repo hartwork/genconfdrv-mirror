@@ -218,7 +218,7 @@ class ConfigDrive:
                               self._tmpfs.getsyspath(""),
                               ])
 
-        p.wait()
+        return p.wait()
 
     def close(self):
         if self._tmpfs:
@@ -308,7 +308,8 @@ def main():
                 cfgdrv.add_user(user[0], keys, sudo=sudo, gecos=gecos, password=password)
 
         if args.output:
-            cfgdrv.write_iso(args.output)
+            ret = cfgdrv.write_iso(args.output)
+            sys.exit(ret)
     finally:
         if cfgdrv:
             cfgdrv.close()
