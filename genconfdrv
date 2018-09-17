@@ -244,7 +244,7 @@ def main():
     parser.add_argument("-H", "--hostname", required=True, help="Hostname")
     parser.add_argument("-o", "--output", required=True, help="Path to write iso to")
     parser.add_argument("-n", "--nameservers", "--ns", default=["1.1.1.1", "8.8.8.8"], nargs="+", help="Nameservers")
-    parser.add_argument("-i", "--networks", "--net", default=[], nargs="+")
+    parser.add_argument("-i", "--networks", "--net", default=[], nargs="+", help="Specify all networks, in format of interface[:address:[gateway]]. Both : and ; can be used as delimiter (but only one per net config). Address MUST be a network in CIDR notation")
     parser.add_argument("-u", "--disable-upgrades", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
     parser.add_argument("--no-debian-cleanup", "--ndc", action="store_true", default=False)
@@ -261,7 +261,10 @@ def main():
         cfgdrv.set_hostname(args.hostname)
 
         for net in args.networks:
-            net = net.split(":")
+            if ";" in net:
+                net = net.split(";")
+            else:
+                net = net.split(":")
             cfgdrv.conf_network(*net)
 
         if args.nameservers:
