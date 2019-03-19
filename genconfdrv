@@ -25,6 +25,7 @@ class ConfigDrive:
         self._interfaces = []
         self._pubkeys = []
         self._verbose = verbose
+        self._clean_metadata = False
 
         self._added_resolv_module_call = False
 
@@ -91,6 +92,9 @@ class ConfigDrive:
         if not self._added_resolv_module_call:
             self.add_command("cloud-init single --name cc_resolv_conf", True)
             self._added_resolv_module_call = True
+
+    def set_clean_metadata(self, do_clean_metadata):
+        self._clean_metadata = do_clean_metadata
 
     def add_user(self, name, keys=None, gecos=None, sudo=False, password=None):
         if "users" not in self._user_data:
@@ -168,8 +172,10 @@ class ConfigDrive:
             meta_data["files"].append({"content_path": "/content/0001", "path": "/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg"})
             self.add_text("/openstack/content/0001", "network: {config: disabled}")
 
-        #meta_data["files"].append({"content_path": "/content/0002", "path": "/etc/cloud/cloud.cfg.d/10-resolv-conf.cfg"})
-        #self.add_text("/openstack/content/0002", "cloud_init_modules:\n  - resolv-conf\n")
+        # do not look for datasource on every boot
+        if self._clean_metadata:
+            meta_data["files"].append({"content_path": "/content/0002", "path": "/etc/cloud/cloud.cfg.d/99-manual-cache-clean.cfg"})
+            self.add_text("/openstack/content/0002", "manual_cache_clean: True")
 
         if self._pubkeys:
             meta_data["public_keys"] = {}
@@ -204,10 +210,18 @@ class ConfigDrive:
     def _write_userdata(self):
         self.add_text("/openstack/latest/user_data", "#cloud-config\n" + json.dumps(self._user_data, indent=4))
 
-    def write_iso(self, path):
+    def write_drive(self, path, fmt):
         self._write_metadata()
         self._write_userdata()
 
+        if fmt == "iso":
+            self._write_iso(path)
+        elif fmt == "tgz":
+            self._write_tgz(path)
+        else:
+            raise ValueError("Unknown format")
+
+    def _write_iso(self, path):
         p = subprocess.Popen([self._genisoimage,
                               "-J", "-r", "-q",
                               "-V", "config-2",
@@ -218,6 +232,10 @@ class ConfigDrive:
                               self._tmpfs.getsyspath(""),
                               ])
 
+        return p.wait()
+
+    def _write_tgz(self, path):
+        p = subprocess.Popen(["tar", "cfz", path, "-C", self._tmpfs.getsyspath(""), "."])
         return p.wait()
 
     def close(self):
@@ -254,6 +272,14 @@ def main():
 
     args = parser.parse_args()
 
+    if not args.format:
+        if args.output.endswith(".tar.gz") or args.output.endswith(".tgz"):
+            args.format = "tgz"
+        elif args.output.endswith(".iso"):
+            args.format = "iso"
+        else:
+            parser.error("Could not infer output format from output file extension")
+
     cfgdrv = None
     try:
         cfgdrv = ConfigDrive(verbose=args.verbose)
@@ -261,10 +287,7 @@ def main():
         cfgdrv.set_hostname(args.hostname)
 
         for net in args.networks:
-            if ";" in net:
-                net = net.split(";")
-            else:
-                net = net.split(":")
+            net = net.split(":")
             cfgdrv.conf_network(*net)
 
         if args.nameservers:
@@ -311,8 +334,7 @@ def main():
                 cfgdrv.add_user(user[0], keys, sudo=sudo, gecos=gecos, password=password)
 
         if args.output:
-            ret = cfgdrv.write_iso(args.output)
-            sys.exit(ret)
+            cfgdrv.write_iso(args.output)
     finally:
         if cfgdrv:
             cfgdrv.close()
