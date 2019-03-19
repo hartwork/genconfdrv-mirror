@@ -3,8 +3,6 @@
 from __future__ import print_function
 
 import argparse
-#import fs
-#from fs import tempfs, path
 import fs.tempfs
 import fs.path
 import ipaddress
@@ -131,7 +129,6 @@ class ConfigDrive:
         if dir_path and not self._tmpfs.exists(dir_path):
             self._tmpfs.makedirs(dir_path)
 
-
         self._tmpfs.settext(path, content)
         if self._verbose:
             print(" >>", path)
@@ -151,10 +148,10 @@ class ConfigDrive:
             "files": [],
             "hostname": self._hostname,
             "name": self._hostname.split(".")[0],
-            #"meta": {
-            #    "role": "webservers",
-            #    "essential": False,
-            #}
+            # "meta": {
+            #     "role": "webservers",
+            #     "essential": False,
+            # }
             "uuid": str(uuid.uuid4()),
         }
 
@@ -169,12 +166,14 @@ class ConfigDrive:
             meta_data["files"].append({"content_path": "/content/0000", "path": "/etc/network/interfaces"})
             self.add_text("/openstack/content/0000", "\n".join(self._interfaces))
 
-            meta_data["files"].append({"content_path": "/content/0001", "path": "/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg"})
+            meta_data["files"].append({"content_path": "/content/0001",
+                                       "path": "/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg"})
             self.add_text("/openstack/content/0001", "network: {config: disabled}")
 
         # do not look for datasource on every boot
         if self._clean_metadata:
-            meta_data["files"].append({"content_path": "/content/0002", "path": "/etc/cloud/cloud.cfg.d/99-manual-cache-clean.cfg"})
+            meta_data["files"].append({"content_path": "/content/0002",
+                                       "path": "/etc/cloud/cloud.cfg.d/99-manual-cache-clean.cfg"})
             self.add_text("/openstack/content/0002", "manual_cache_clean: True")
 
         if self._pubkeys:
@@ -202,9 +201,9 @@ class ConfigDrive:
         if "chpasswd" not in self._user_data:
             self._user_data["chpasswd"] = {}
             self._user_data["chpasswd"]["list"] = ""
-            #self._user_data["chpasswd"]["list"] = []
+            # self._user_data["chpasswd"]["list"] = []
 
-        #self._user_data["chpasswd"]["list"].append("%s:%s" % (user, password))
+        # self._user_data["chpasswd"]["list"].append("%s:%s" % (user, password))
         self._user_data["chpasswd"]["list"] += "%s:%s\n" % (user, password)
 
     def _write_userdata(self):
@@ -250,7 +249,8 @@ class ConfigDrive:
 #        cfgdrv.add_command("rm -rf /home/debian/; userdel debian; groupdel debian", True)
 #        cfgdrv.add_command("cloud-init single --name cc_resolv_conf", True)
 #        cfgdrv.add_command("rm -f /etc/network/interfaces.d/eth*.cfg", True)
-#        cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/cloud/templates/sources.list.*.tmpl; rm /etc/apt/sources.list.d/*", True)
+#        cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/cloud/templates/sources.list.*.tmpl; "
+#                           "rm /etc/apt/sources.list.d/*", True)
 #        #cfgdrv.add_command("(whoami; date) > /root/bleep", False)
 #        cfgdrv.add_pubkey("ssh-rsa bleep foo")
 #        cfgdrv.set_password("root", "kitteh")
@@ -262,13 +262,17 @@ def main():
     parser.add_argument("-H", "--hostname", required=True, help="Hostname")
     parser.add_argument("-o", "--output", required=True, help="Path to write iso to")
     parser.add_argument("-n", "--nameservers", "--ns", default=["1.1.1.1", "8.8.8.8"], nargs="+", help="Nameservers")
-    parser.add_argument("-i", "--networks", "--net", default=[], nargs="+", help="Specify all networks, in format of interface[:address:[gateway]]. Both : and ; can be used as delimiter (but only one per net config). Address MUST be a network in CIDR notation")
+    parser.add_argument("-i", "--networks", "--net", default=[], nargs="+",
+                        help="Specify all networks, in format of interface[:address:[gateway]]. "
+                             "Both : and ; can be used as delimiter (but only one per net config). "
+                             "Address MUST be a network in CIDR notation")
     parser.add_argument("-u", "--disable-upgrades", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
     parser.add_argument("--no-debian-cleanup", "--ndc", action="store_true", default=False)
     parser.add_argument("--set-root-password", "--srp", default=None)
-    parser.add_argument("-a", "--add-user", default=[], nargs="+", help="Add users, format is username:key?:sudo?:gecos?:password?, sudo is a bool, key is either an ssh key or a path to an ssh key")
-
+    parser.add_argument("-a", "--add-user", default=[], nargs="+",
+                        help="Add users, format is username:key?:sudo?:gecos?:password?, "
+                             "sudo is a bool, key is either an ssh key or a path to an ssh key")
 
     args = parser.parse_args()
 
@@ -298,9 +302,10 @@ def main():
 
         if not args.no_debian_cleanup:
             cfgdrv.add_command("rm -f /etc/network/interfaces.d/eth*", True)
-            cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/cloud/templates/sources.list.*.tmpl; rm /etc/apt/sources.list.d/*", True)
-            cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/resolv.conf /etc/cloud/templates/resolv.conf.tmpl", True)
-
+            cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/cloud/templates/sources.list.*.tmpl; "
+                               "rm /etc/apt/sources.list.d/*", True)
+            cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' "
+                               "/etc/resolv.conf /etc/cloud/templates/resolv.conf.tmpl", True)
 
         if args.set_root_password:
             cfgdrv.set_password("root", args.set_root_password)
@@ -338,6 +343,7 @@ def main():
     finally:
         if cfgdrv:
             cfgdrv.close()
+
 
 if __name__ == '__main__':
     main()
