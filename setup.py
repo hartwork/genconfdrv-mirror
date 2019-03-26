@@ -12,6 +12,12 @@ setup(
     python_requires='>=3.5',
     packages=['genconfdrv'],
     install_requires=['fs'],
+    license='Apache License, Version 2.0',
+    classifiers=[
+        'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3',
+        'Environment :: Console',
+    ]
     entry_points={
         'console_scripts': [
             'genconfdrv = genconfdrv.genconfdrv:main'
