@@ -273,6 +273,8 @@ def main():
     parser.add_argument("-a", "--add-user", default=[], nargs="+",
                         help="Add users, format is username:key?:sudo?:gecos?:password?, "
                              "sudo is a bool, key is either an ssh key or a path to an ssh key")
+    parser.add_argument("-f", "--format", default=None, choices=('tgz', 'iso'),
+                        help="Specify output format, default is to infer from output file extension")
 
     args = parser.parse_args()
 
@@ -339,7 +341,7 @@ def main():
                 cfgdrv.add_user(user[0], keys, sudo=sudo, gecos=gecos, password=password)
 
         if args.output:
-            cfgdrv.write_iso(args.output)
+            cfgdrv.write_drive(args.output, args.format)
     finally:
         if cfgdrv:
             cfgdrv.close()
