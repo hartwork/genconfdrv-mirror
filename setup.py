@@ -17,7 +17,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
         'Environment :: Console',
-    ]
+    ],
     entry_points={
         'console_scripts': [
             'genconfdrv = genconfdrv.genconfdrv:main'
