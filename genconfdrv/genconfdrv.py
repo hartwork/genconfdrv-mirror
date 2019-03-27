@@ -36,7 +36,7 @@ class ConfigDrive:
     def set_hostname(self, hostname):
         self._hostname = hostname
 
-    def conf_network(self, interface, address=None, gateway=None):
+    def conf_network(self, interface, address=None, gateway=None, *extra_routes):
         if not address and gateway:
             raise ValueError("You cannot define a gateway, but supply no address")
 
@@ -65,6 +65,16 @@ class ConfigDrive:
 
         if gateway:
             self._interfaces.append("    gateway %s" % str(ipaddress.ip_address(gateway)))
+
+        for routedef in extra_routes:
+            if "-" not in routedef:
+                raise ValueError("Route {} is missing a gateway separated by a -".format(routedef))
+            route, gw = routedef.split('-')
+            if "/" not in route:
+                raise ValueError("Route {} is not a subnet".format(route))
+            route = ipaddress.ip_interface(route)
+            gw = ipaddress.ip_address(gw)
+            self._interfaces.append("    up ip route add {} via {}".format(route, gw))
 
     def conf_resolve(self, resolvers):
         if not self._hostname:
@@ -263,9 +273,11 @@ def main():
     parser.add_argument("-o", "--output", required=True, help="Path to write iso to")
     parser.add_argument("-n", "--nameservers", "--ns", default=["1.1.1.1", "8.8.8.8"], nargs="+", help="Nameservers")
     parser.add_argument("-i", "--networks", "--net", default=[], nargs="+",
-                        help="Specify all networks, in format of interface[:address:[gateway]]. "
+                        help="Specify all networks, in format of interface[:address[:gateway[:route-gateway[:...]]]]. "
                              "Both : and ; can be used as delimiter (but only one per net config). "
-                             "Address MUST be a network in CIDR notation")
+                             "Address MUST be a network in CIDR notation. Additional "
+                             "routes can be added in the form of cidr-gateway, e.g. "
+                             "10.0.0.0/8-10.0.0.1")
     parser.add_argument("-u", "--disable-upgrades", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
     parser.add_argument("--no-debian-cleanup", "--ndc", action="store_true", default=False)
