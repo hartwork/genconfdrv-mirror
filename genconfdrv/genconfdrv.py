@@ -269,6 +269,8 @@ def main():
     parser.add_argument("-u", "--disable-upgrades", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
     parser.add_argument("--no-debian-cleanup", "--ndc", action="store_true", default=False)
+    parser.add_argument("--no-remove-cloud-init", action="store_true", default=False,
+                        help="Do not purge cloud-init from system after execution")
     parser.add_argument("--set-root-password", "--srp", default=None)
     parser.add_argument("-a", "--add-user", default=[], nargs="+",
                         help="Add users, format is username:key?:sudo?:gecos?:password?, "
@@ -308,7 +310,6 @@ def main():
                                "rm /etc/apt/sources.list.d/*", True)
             cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' "
                                "/etc/resolv.conf /etc/cloud/templates/resolv.conf.tmpl", True)
-
         if args.set_root_password:
             cfgdrv.set_password("root", args.set_root_password)
 
@@ -339,6 +340,9 @@ def main():
                 if len(user) >= 5:
                     password = user[4]
                 cfgdrv.add_user(user[0], keys, sudo=sudo, gecos=gecos, password=password)
+
+        if not args.no_remove_cloud_init:
+            cfgdrv.add_command("apt remove -y cloud-init")
 
         if args.output:
             cfgdrv.write_drive(args.output, args.format)
