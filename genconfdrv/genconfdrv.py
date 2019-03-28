@@ -281,6 +281,7 @@ def main():
     parser.add_argument("-u", "--disable-upgrades", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
     parser.add_argument("--no-debian-cleanup", "--ndc", action="store_true", default=False)
+    parser.add_argument("--no-debian-sources-cleanup", "--ndsc", action="store_true", default=False)
     parser.add_argument("--no-remove-cloud-init", action="store_true", default=False,
                         help="Do not purge cloud-init from system after execution")
     parser.add_argument("--set-root-password", "--srp", default=None)
@@ -318,10 +319,13 @@ def main():
 
         if not args.no_debian_cleanup:
             cfgdrv.add_command("rm -f /etc/network/interfaces.d/eth*", True)
-            cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/cloud/templates/sources.list.*.tmpl; "
-                               "rm /etc/apt/sources.list.d/*", True)
+            cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' /etc/cloud/templates/sources.list.*.tmpl", True)
             cfgdrv.add_command("sed -rni '/^([^#]|## template)/p' "
                                "/etc/resolv.conf /etc/cloud/templates/resolv.conf.tmpl", True)
+
+        if not args.no_debian_sources_cleanup:
+            cfgdrv.add_command("rm /etc/apt/sources.list.d/*", True)
+
         if args.set_root_password:
             cfgdrv.set_password("root", args.set_root_password)
 
