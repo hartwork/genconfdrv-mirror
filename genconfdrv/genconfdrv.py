@@ -47,12 +47,16 @@ class ConfigDrive:
             ])
 
         if address:
-            if "/" not in address:
+            if address == "dhcp":
+                address = None
+                method = "dhcp"
+            elif "/" in address:
+                address = ipaddress.ip_interface(address)
+                method = "static"
+            else:
                 raise ValueError("IP Interface is not a subnet")
-            address = ipaddress.ip_interface(address)
-            method = "static"
         else:
-            method = "dhcp"
+            method = "manual"
 
         self._interfaces.extend([
             "",
@@ -275,8 +279,8 @@ def main():
     parser.add_argument("-i", "--networks", "--net", default=[], nargs="+",
                         help="Specify all networks, in format of interface[:address[:gateway[:route-gateway[:...]]]]. "
                              "Both : and ; can be used as delimiter (but only one per net config). "
-                             "Address MUST be a network in CIDR notation. Additional "
-                             "routes can be added in the form of cidr-gateway, e.g. "
+                             "Address MUST be a network in CIDR notation or dhcp for DHCP mode. "
+                             "Additional routes can be added in the form of cidr-gateway, e.g. "
                              "10.0.0.0/8-10.0.0.1")
     parser.add_argument("-u", "--disable-upgrades", action="store_true", default=False)
     parser.add_argument("-v", "--verbose", action="store_true", default=False)
