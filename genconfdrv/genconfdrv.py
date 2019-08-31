@@ -312,7 +312,10 @@ def main():
         cfgdrv.set_hostname(args.hostname)
 
         for net in args.networks:
-            net = net.split(":")
+            if ";" in net:
+                net = net.split(";")
+            else:
+                net = net.split(":")
             cfgdrv.conf_network(*net)
 
         if args.nameservers:
